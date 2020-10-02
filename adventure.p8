@@ -1,28 +1,98 @@
 pico-8 cartridge // http://www.pico-8.com
 version 29
 __lua__
+--will house all entities created
+entities = {}
+
+function newposition(x, y, w, h)
+	local p = {}
+
+	p.x = x
+	p.y = y
+	p.w = w
+	p.h = h
+
+	return p
+end
+
+--takes the x, y coordinates of the sprite's position within the sprite sheet
+--each sprite is 8x8, so grabbing 2nd sprite on sprite sheet would be 8, 0
+function newsprite(x, y)
+	local s = {}
+
+	s.x = x
+	s.y = y
+
+	return s
+end
+
+function newentity(position, sprite)
+	local e = {}
+
+	e.position = position
+	e.sprite = sprite
+
+	--adds each entity instance to entities table
+	add(entities, e)
+
+	return e
+end
+
+--graphics system
+gs = {}
+gs.update = function()
+	cls()
+	--center camera on player
+	camera(
+		-64 + player.position.x + (player.position.w / 2),
+		-64 + player.position.y + (player.position.h / 2)
+	)
+	map()
+
+	--draw all entities with sprites
+	for ent in all(entities) do
+		if ent.sprite ~= nil and ent.position ~= nil then
+			sspr(
+				player.sprite.x, player.sprite.y,
+				player.position.w, player.position.h,
+				player.position.x, player.position.y
+			)
+		end
+	end
+
+	--crosshair sprite
+	--spr(16, 64-4, 64-4)
+end
+
 function _init()
-	player_x=56
-	player_y=56
+	--creates a player entity
+	player = newentity(
+		newposition(56, 56, 8, 8),
+		newsprite(8, 0)
+	)
 end
 
 function _update60()
 	--check player movement
-	if btn(0) then player_x-=1  end
-	if btn(1) then player_x+=1  end
-	if btn(2) then player_y-=1  end
-	if btn(3) then player_y+=1  end
+	if btn(0) then 
+		player.position.x-=1
+	end
+
+	if btn(1) then
+		player.position.x+=1
+	end
+
+	if btn(2) then
+		player.position.y-=1
+	end
+
+	if btn(3) then
+		player.position.y+=1
+	end
 end
 
 function _draw()
-	cls()
-	--center camera on player
-	camera(-64+player_x+4, -64+player_y+4)
-	map()
-	spr(1, player_x, player_y)
-	--camera()
-	--crosshair sprite
-	--spr(16, 64-4, 64-4)
+	gs.update()
 end
 __gfx__
 00000000007000600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000cccccccc3333333355555555
