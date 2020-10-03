@@ -68,8 +68,8 @@ function newentity(position, sprite, control, intention)
 end
 
 --player input is based on the current button being pressed
+--anytime a button is being pressed, updates ent's intention property to true and then false when button is released
 function playerinput(ent)
-
 	ent.intention.left = btn(ent.control.left)
 	ent.intention.right = btn(ent.control.right)
 	ent.intention.up = btn(ent.control.up)
@@ -80,7 +80,7 @@ controlsystem = {}
 controlsystem.update = function()
 	for ent in all(entities) do
 		--every frame, the control system is checking the entities table for entities that have non-nil control/intention properties
-		--updates the entity's control.input property with the current entity
+		--updates the entity's control.input property with the current entity being controlled
 		if ent.control ~= nil and ent.intention ~= nil then
 			ent.control.input(ent)
 		end
@@ -132,9 +132,9 @@ function tostring(any)
 	
 	local str = "{"
 
-  for k,v in pairs(any) do
-    if (str~="{") str=str..","
-    str=str..tostring(k).."="..tostring(v)
+	for k,v in pairs(any) do
+		if (str~="{") str=str..","
+		str="\n"..str..tostring(k).."="..tostring(v)
 	end
 
   return str.."}"
@@ -152,8 +152,6 @@ function _init()
 		--creates a intention component
 		newintention()
 	)
-
-	printh(tostring(player))
 end
 
 function _update60()
@@ -164,6 +162,7 @@ function _update60()
 end
 
 function _draw()
+	--every frame, draws all graphics to the screen
 	graphicsystem.update()
 end
 __gfx__
