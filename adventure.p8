@@ -1,8 +1,33 @@
 pico-8 cartridge // http://www.pico-8.com
 version 29
 __lua__
---will house all entities created
+--a table containing all game entities
 entities = {}
+
+--creates and returns a new component
+function newcontrol(left, right, up, down, input)
+	local c = {}
+
+	c.left = left
+	c.right = right
+	c.up = up
+	c.down = down
+	c.input = input
+
+	return c
+end
+
+--creates and returns a new intention component
+function newintention()
+	i = {}
+
+	i.left = false
+	i.right = false
+	i.up = false
+	i.down = false
+
+	return i
+end
 
 function newposition(x, y, w, h)
 	local p = {}
@@ -26,11 +51,13 @@ function newsprite(x, y)
 	return s
 end
 
-function newentity(position, sprite)
+function newentity(position, sprite, control, intention)
 	local e = {}
 
 	e.position = position
 	e.sprite = sprite
+	e.control = control
+	e.intention = intention
 
 	--adds each entity instance to entities table
 	add(entities, e)
@@ -38,9 +65,36 @@ function newentity(position, sprite)
 	return e
 end
 
---graphics system
-gs = {}
-gs.update = function()
+function playerinput(ent)
+	ent.intention.left = btn(ent.control.left)
+	ent.intention.right = btn(ent.control.right)
+	ent.intention.up = btn(ent.control.up)
+	ent.intention.down = btn(ent.control.down)
+end
+
+controlsystem = {}
+controlsystem.update = function()
+	for ent in all(entities) do
+		if ent.control ~= nil and ent.intention ~= nil then
+			ent.control.input(ent)
+		end
+	end
+end
+
+physicssystem = {}
+physicssystem.update = function ()
+	for ent in all(entities) do
+		if ent.position ~= nil and ent.intention ~= nil then
+			if ent.intention.left then ent.position.x -= 1 end
+			if ent.intention.right then ent.position.x += 1 end
+			if ent.intention.up then ent.position.y -= 1 end
+			if ent.intention.down then ent.position.y += 1 end
+		end
+	end
+end
+
+graphicsystem = {}
+graphicsystem.update = function()
 	cls()
 	--center camera on player
 	camera(
@@ -60,47 +114,54 @@ gs.update = function()
 		end
 	end
 
-	--crosshair sprite
+	--(for testing purposes) crosshair sprite
 	--spr(16, 64-4, 64-4)
+end
+
+--(for testing purposes) print the content of a table to the console
+function printtablecontent(tbl)
+	cls()
+
+	for key, val in pairs( tbl ) do
+		if type(val) ~= 'table' then
+			print( key .. ' = ' .. val )
+		else
+			print(key .. ' = table' )
+		end
+	end
 end
 
 function _init()
 	--creates a player entity
 	player = newentity(
+		--creates a position component
 		newposition(56, 56, 8, 8),
-		newsprite(8, 0)
+		--create a sprite component
+		newsprite(8, 0),
+		--creates a control component
+		newcontrol(0, 1, 2, 3, playerinput),
+		--creates a intention component
+		newintention()
 	)
 end
 
 function _update60()
-	--check player movement
-	if btn(0) then 
-		player.position.x-=1
-	end
-
-	if btn(1) then
-		player.position.x+=1
-	end
-
-	if btn(2) then
-		player.position.y-=1
-	end
-
-	if btn(3) then
-		player.position.y+=1
-	end
+	--checks player input
+	controlsystem.update()
+	--moves entities
+	physicssystem.update()
 end
 
 function _draw()
-	gs.update()
+	graphicsystem.update()
 end
 __gfx__
 00000000007000600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000cccccccc3333333355555555
 00000000007777700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000cccccccc3333333355555555
 000000000071ff100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000cccccccc3333333355555555
 00000000bb7ffff00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000cccccccc3333333355555555
-000000003cbcccc00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000cccccccc3333333355555555
-00000000f3ccccc40000000000000000000000000000000000000000000000000000000000000000000000000000000000000000cccccccc3333333355555555
+00000000bcbcccc00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000cccccccc3333333355555555
+00000000fbccccc40000000000000000000000000000000000000000000000000000000000000000000000000000000000000000cccccccc3333333355555555
 00000000001111100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000cccccccc3333333355555555
 0000000000f000400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000cccccccc3333333355555555
 00088000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
