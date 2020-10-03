@@ -4,7 +4,30 @@ __lua__
 --a table containing all game entities
 entities = {}
 
---creates and returns a new component
+--creates and returns a new position component
+function newposition(x, y, w, h)
+	local p = {}
+
+	p.x = x
+	p.y = y
+	p.w = w
+	p.h = h
+
+	return p
+end
+
+--takes the x, y coordinates of the sprite's position within the sprite sheet
+--each sprite is 8x8, so grabbing 2nd sprite on sprite sheet would be 8, 0
+function newsprite(x, y)
+	local s = {}
+
+	s.x = x
+	s.y = y
+
+	return s
+end
+
+--creates and returns a new control component
 function newcontrol(left, right, up, down, input)
 	local c = {}
 
@@ -29,28 +52,7 @@ function newintention()
 	return i
 end
 
-function newposition(x, y, w, h)
-	local p = {}
-
-	p.x = x
-	p.y = y
-	p.w = w
-	p.h = h
-
-	return p
-end
-
---takes the x, y coordinates of the sprite's position within the sprite sheet
---each sprite is 8x8, so grabbing 2nd sprite on sprite sheet would be 8, 0
-function newsprite(x, y)
-	local s = {}
-
-	s.x = x
-	s.y = y
-
-	return s
-end
-
+--creates and returns a new entity component
 function newentity(position, sprite, control, intention)
 	local e = {}
 
@@ -65,7 +67,9 @@ function newentity(position, sprite, control, intention)
 	return e
 end
 
+--player input is based on the current button being pressed
 function playerinput(ent)
+
 	ent.intention.left = btn(ent.control.left)
 	ent.intention.right = btn(ent.control.right)
 	ent.intention.up = btn(ent.control.up)
@@ -75,6 +79,8 @@ end
 controlsystem = {}
 controlsystem.update = function()
 	for ent in all(entities) do
+		--every frame, the control system is checking the entities table for entities that have non-nil control/intention properties
+		--updates the entity's control.input property with the current entity
 		if ent.control ~= nil and ent.intention ~= nil then
 			ent.control.input(ent)
 		end
@@ -84,6 +90,7 @@ end
 physicssystem = {}
 physicssystem.update = function ()
 	for ent in all(entities) do
+		--every frame, the physics system is checking the entities table for entities that have non-nil intention properties and updating the entity's position based on the (movement) intention direction
 		if ent.position ~= nil and ent.intention ~= nil then
 			if ent.intention.left then ent.position.x -= 1 end
 			if ent.intention.right then ent.position.x += 1 end
@@ -96,14 +103,15 @@ end
 graphicsystem = {}
 graphicsystem.update = function()
 	cls()
-	--center camera on player
+	--every frame, center camera on player sprite
 	camera(
 		-64 + player.position.x + (player.position.w / 2),
 		-64 + player.position.y + (player.position.h / 2)
 	)
+	--every frame, draw the map
 	map()
 
-	--draw all entities with sprites
+	--every frame, draw all sprite entities at their specified position coordinates
 	for ent in all(entities) do
 		if ent.sprite ~= nil and ent.position ~= nil then
 			sspr(
@@ -118,23 +126,24 @@ graphicsystem.update = function()
 	--spr(16, 64-4, 64-4)
 end
 
---(for testing purposes) print the content of a table to the console
-function printtablecontent(tbl)
-	cls()
+--(for testing purposes) converts anything to string, even nested tables
+function tostring(any)
+	if (type(any)~="table") return tostr(any)
+	
+	local str = "{"
 
-	for key, val in pairs( tbl ) do
-		if type(val) ~= 'table' then
-			print( key .. ' = ' .. val )
-		else
-			print(key .. ' = table' )
-		end
+  for k,v in pairs(any) do
+    if (str~="{") str=str..","
+    str=str..tostring(k).."="..tostring(v)
 	end
+
+  return str.."}"
 end
 
 function _init()
 	--creates a player entity
 	player = newentity(
-		--creates a position component
+		--creates a position component and adds sprite to the coordinates on the map
 		newposition(56, 56, 8, 8),
 		--create a sprite component
 		newsprite(8, 0),
@@ -143,6 +152,8 @@ function _init()
 		--creates a intention component
 		newintention()
 	)
+
+	printh(tostring(player))
 end
 
 function _update60()
